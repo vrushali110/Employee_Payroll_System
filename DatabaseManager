@@ -1,0 +1,100 @@
+package employee_payroll_system;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.lang.reflect.Method;
+
+public class DatabaseManager {
+
+    private static final String JDBC_URL = "jdbc:mysql://localhost:3306/Payroll_system";
+    private static final String USERNAME = "root"; // Change this to your database username
+    private static final String PASSWORD = "root1234"; // Change this to your database password
+
+    /**
+     * Establishes a connection to the database.
+     *
+     * @return a database connection
+     * @throws SQLException if a database access error occurs
+     */
+    public static Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD);
+    }
+
+    /**
+     * Inserts an employee into the database.
+     *
+     * @param connection the database connection
+     * @param employee   the employee to be inserted
+     * @throws SQLException if a database access error occurs
+     */
+    public static void insertEmployee(Connection connection, Employee employee) throws SQLException {
+        String sql = "INSERT INTO employee (name, id, hours_worked, hourly_rate) VALUES (?, ?, ?, ?)";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, employee.getName());
+            statement.setInt(2, employee.getId());
+
+            // Use reflection to check if the methods exist
+            Method getHoursWorkMethod = null;
+            Method getHourlyRateMethod = null;
+
+            try {
+                getHoursWorkMethod = employee.getClass().getMethod("getHoursWork");
+                getHourlyRateMethod = employee.getClass().getMethod("getHourlyRate");
+            } catch (NoSuchMethodException e) {
+                // Handle the case where the methods are not found
+                e.printStackTrace();
+            }
+
+            if (getHoursWorkMethod != null && getHourlyRateMethod != null) {
+                // The methods exist, proceed with invoking them
+                try {
+                    int hoursWork = (int) getHoursWorkMethod.invoke(employee);
+                    double hourlyRate = (double) getHourlyRateMethod.invoke(employee);
+
+                    statement.setInt(3, hoursWork);
+                    statement.setDouble(4, hourlyRate);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            } else {
+                // Methods not found, handle accordingly (provide default values, etc.)
+                statement.setInt(3, 0);
+                statement.setDouble(4, 0.0);
+            }
+
+            statement.executeUpdate();
+            System.out.println("Employee added to the database.");
+        }
+    }
+        
+          public  static void deleteEmployee(Connection connection, int id) throws SQLException {
+        // Remove from the database
+        String deleteSql = "DELETE FROM employee WHERE id = ?";
+        try (PreparedStatement deleteStatement = connection.prepareStatement(deleteSql)) {
+                    System.out.println("SQL Query: " + deleteSql);
+                    System.out.println("ID Parameter: " + id);
+
+            deleteStatement.setInt(1, id);
+            int rowsAffected = deleteStatement.executeUpdate();
+
+            if (rowsAffected > 0) {
+                System.out.println("Employee removed from the database.");
+            } else {
+                System.out.println("Employee not found in the database.");
+            }
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+}
+
+
+  
