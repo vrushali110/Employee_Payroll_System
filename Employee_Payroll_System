@@ -1,0 +1,175 @@
+package employee_payroll_system;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Scanner;
+
+
+
+public class Employee_Payroll_System {
+
+    public static void main(String[] args) {
+        try (Connection connection = DatabaseManager.getConnection()) {
+            if (connection != null) {
+                System.out.println("Connection to the database established successfully!");
+
+                // Your database operations go here
+                // For example, adding an employee from user input
+                Scanner scanner = new Scanner(System.in);
+                System.out.println("Do you want to add (A) or remove (R) an employee? Enter 'A' or 'R': ");
+                String userChoice = scanner.nextLine().toUpperCase();
+
+                PayrollSystem sys = new PayrollSystem(connection);
+
+                if ("A".equals(userChoice)) {
+                    // Adding an employee
+                    System.out.println("Enter employee details:");
+
+                    System.out.print("Name: ");
+                    String name = scanner.nextLine();
+
+                    System.out.print("ID: ");
+                    int id = scanner.nextInt();
+
+                    System.out.print("Hours Worked: ");
+                    int hoursWorked = scanner.nextInt();
+
+                    System.out.print("Hourly Rate: ");
+                    double hourlyRate = scanner.nextDouble();
+
+                    Part_time newEmployee = new Part_time(name, id, hoursWorked, hourlyRate);
+                    sys.addEmployee(newEmployee);
+                } else if ("R".equals(userChoice)) {
+                    // Removing an employee
+                    System.out.print("Enter the ID of the employee to remove: ");
+                    int removeId = scanner.nextInt();
+                    sys.removeEmployeeById(removeId);
+                } else {
+                    System.out.println("Invalid choice. Exiting program.");
+                }
+
+                // Displaying employees from the database
+                sys.display();
+            } else {
+                System.out.println("Connection not established. Exiting program.");
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            // Handle the exception according to your application's needs
+        }
+    }
+}
+
+// This is a simplified version of the Employee class
+  abstract class Employee {
+    private String name;
+    private int id;
+
+    public Employee(String name, int id) {
+        this.name = name;
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public abstract double calculateSalary();
+
+    @Override
+    public String toString() {
+        return "Employee[name=" + name + ", id=" + id + ", calculated_salary=" + calculateSalary() + "]";
+    }
+}
+
+ class Part_time extends Employee {
+    private int hoursWork;
+    private double hourlyRate;
+
+    public Part_time(String name, int id, int hoursWork, double hourlyRate) {
+        super(name, id);
+        this.hoursWork = hoursWork;
+        this.hourlyRate = hourlyRate;
+    }
+
+    public int getHoursWork() {
+        return hoursWork;
+    }
+
+    public double getHourlyRate() {
+        return hourlyRate;
+    }
+
+    @Override
+    public double calculateSalary() {
+        return hourlyRate * hoursWork;
+    }
+}
+
+class PayrollSystem {
+    private ArrayList<Employee> employeeList;
+    private Connection connection;
+
+    public PayrollSystem(Connection connection) {
+        this.connection = connection;
+        employeeList = new ArrayList<>();
+    }
+
+    public void addEmployee(Employee employee) {
+        try {
+            employeeList.add(employee);
+            DatabaseManager.insertEmployee(connection, employee);
+            System.out.println("Employee added successfully.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.err.println("Failed to add employee to the database. Please check the logs for details.");
+            // You may decide to roll back the in-memory list addition or take other actions based on your requirements.
+        }
+    }
+
+public void removeEmployeeById(int id) {
+        try {
+        // Print debug information about the in-memory list
+        System.out.println("Before removal - In-memory list: " + employeeList);
+
+        // Print debug information about the employee to remove
+        System.out.println("Removing employee with ID: " + id);
+
+        // Remove from the database using the DatabaseManager
+        DatabaseManager.deleteEmployee(connection, id);
+
+        // Print debug information about the in-memory list after removal
+        System.out.println("After removal - In-memory list: " + employeeList);
+        
+        // If needed, you can update the in-memory list by fetching the updated data from the database
+        // For example, you can call a method to reload the employeeList from the database
+
+    } catch (SQLException e) {
+        e.printStackTrace();
+        System.err.println("Failed to remove employee. Please check the logs for details.");
+        // Handle the exception according to your application's needs
+    }
+
+}
+    
+    
+        public void display() {
+        for (Employee employee : employeeList) {
+            System.out.println(employee);
+        }
+
+}
+}
+
+        
+       
+
+
+
+   
